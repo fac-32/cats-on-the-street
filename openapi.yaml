@@ -1,0 +1,243 @@
+NameTheCatAPI: 1.0.0
+info:
+  title: Cats on the Street API
+  version: 1.0.0
+  description: API for managing street cats in London neighborhoods
+  contact:
+    url: https://github.com/fac-32/cats-on-the-street
+  license:
+    name: ISC
+
+servers:
+  - url: http://localhost:3000
+    description: Local development server
+  - url: https://api.example.com
+    description: Production server (update with actual URL)
+
+tags:
+  - name: cats
+    description: Operations related to cats
+
+paths:
+  /cats:
+    get:
+      summary: Get all cat names
+      description: Returns a list of all cat names
+      operationId: getAllCatNames
+      tags:
+        - cats
+      responses:
+        "200":
+          description: Successfully retrieved cat names
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+              example:
+                - Whiskers
+                - Fluffy
+                - Mittens
+                - Shadow
+                - Tiger
+
+    post:
+      summary: Add a new cat
+      description: Creates a new cat entry with auto-generated ID
+      operationId: createCat
+      tags:
+        - cats
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateCatRequest"
+            example:
+              name: "Boots"
+              description: "White cat in Clapham"
+      responses:
+        "201":
+          description: Cat created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Cat"
+              example:
+                id: 6
+                name: "Boots"
+                description: "White cat in Clapham"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+  /cats/{id}:
+    get:
+      summary: Get a specific cat by ID
+      description: Returns detailed information about a cat including name and description
+      operationId: getCatById
+      tags:
+        - cats
+      parameters:
+        - $ref: "#/components/parameters/CatId"
+      responses:
+        "200":
+          description: Successfully retrieved cat details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Cat"
+              example:
+                id: 1
+                name: "Whiskers"
+                description: "Siamese grey in Stockwell"
+        "404":
+          $ref: "#/components/responses/CatNotFound"
+
+  /cats/{id}:
+    put:
+      summary: Update cat description
+      description: Updates the description of an existing cat
+      operationId: updateCatDescription
+      tags:
+        - cats
+      parameters:
+        - $ref: "#/components/parameters/CatId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateCatRequest"
+            example:
+              description: "Updated: Siamese grey in Stockwell, very friendly"
+      responses:
+        "200":
+          description: Cat updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Cat"
+              example:
+                id: 1
+                name: "Whiskers"
+                description: "Updated: Siamese grey in Stockwell, very friendly"
+        "404":
+          $ref: "#/components/responses/CatNotFound"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+    delete:
+      summary: Delete a cat
+      description: Removes a cat from the system by ID
+      operationId: deleteCat
+      tags:
+        - cats
+      parameters:
+        - $ref: "#/components/parameters/CatId"
+      responses:
+        "200":
+          description: Cat deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeleteResponse"
+              example:
+                message: "Cat deleted"
+        "404":
+          $ref: "#/components/responses/CatNotFound"
+
+components:
+  parameters:
+    CatId:
+      name: id
+      in: path
+      required: true
+      description: The unique identifier of the cat
+      schema:
+        type: integer
+        minimum: 1
+      example: 1
+
+  schemas:
+    Cat:
+      type: object
+      required:
+        - id
+        - name
+        - description
+      properties:
+        id:
+          type: integer
+          description: Unique identifier for the cat
+          example: 1
+        name:
+          type: string
+          description: Name of the cat
+          example: "Whiskers"
+        description:
+          type: string
+          description: Description of the cat including breed and location
+          example: "Siamese grey in Stockwell"
+
+    CreateCatRequest:
+      type: object
+      required:
+        - name
+        - description
+      properties:
+        name:
+          type: string
+          description: Name of the cat
+          minLength: 1
+          example: "Boots"
+        description:
+          type: string
+          description: Description of the cat including breed and location
+          minLength: 1
+          example: "White cat in Clapham"
+
+    UpdateCatRequest:
+      type: object
+      required:
+        - description
+      properties:
+        description:
+          type: string
+          description: Updated description for the cat
+          minLength: 1
+          example: "Updated: Siamese grey in Stockwell, very friendly"
+
+    DeleteResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          example: "Cat deleted"
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Error message describing what went wrong
+          example: "Cat not found"
+
+  responses:
+    CatNotFound:
+      description: Cat with the specified ID was not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            error: "Cat not found"
+
+    BadRequest:
+      description: Invalid request data
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            error: "Invalid request data"
