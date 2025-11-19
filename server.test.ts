@@ -1,67 +1,82 @@
-import { describe, expect, it, beforeAll, afterAll } from "vitest";
-import request from "supertest";
-import app from "./server.js";
+import { describe, it, expect } from 'vitest';
+import request from 'supertest';
+import app from './server.js'; // Adjust path if your file is named differently
 
-describe("Cats API Endpoints", () => {
-  it("GET /cats - should return all cat names", async () => {
-    const response = await request(app).get("/cats");
+describe('Cats API Endpoints', () => {
+  it('GET /cats - should return all cat names', async () => {
+    const response = await request(app).get('/cats');
     expect(response.status).toBe(200);
     expect(Array.isArray(response.body)).toBe(true);
     expect(response.body.length).toBeGreaterThan(0);
   });
 
-  it("GET /cat/:id - should return a specific cat", async () => {
-    const response = await request(app).get("/cat/1");
+  // initially before creating Swagger.test.ts file, the test below was using /cat/:id endpoint
+  it('GET /cats/:id - should return cat details if found', async () => {
+    const response = await request(app).get('/cats/1');
     expect(response.status).toBe(200);
-    expect(response.body).toHaveProperty("name");
-    expect(response.body).toHaveProperty("description");
+    expect(response.body).toHaveProperty('id', 1);
+    expect(response.body).toHaveProperty('name');
+    expect(response.body).toHaveProperty('description');
+    expect(response.body).toHaveProperty('location');
   });
 
-  it("GET /cat/:id - should return 404 for a non-existent cat", async () => {
-    const response = await request(app).get("/cat/999");
+  // initially before creating Swagger.test.ts file, the test below was using /cat/:id endpoint
+  it('GET /cats/:id - should return 404 if cat not found', async () => {
+    const response = await request(app).get('/cats/999');
     expect(response.status).toBe(404);
+    expect(response.body).toHaveProperty('error', 'Cat not found');
   });
 
-  it("POST /cats - should create a new cat", async () => {
+  it('POST /cats - should create a new cat', async () => {
     const newCat = {
-      name: "Test Cat",
-      description: "A cat for testing",
-      location: "Test Location",
+      name: 'Snowball',
+      description: 'White Persian',
+      location: 'Notting Hill',
     };
-    const response = await request(app).post("/cats").send(newCat);
+    const response = await request(app).post('/cats').send(newCat);
     expect(response.status).toBe(201);
-    expect(response.body).toHaveProperty("id");
-    expect(response.body.name).toBe(newCat.name);
+    expect(response.body).toMatchObject(newCat);
+    expect(response.body).toHaveProperty('id');
   });
 
-  it("POST /cats - should return 400 for missing data", async () => {
-      const newCat = {
-          name: "Test Cat",
-          description: "A cat for testing",
-      };
-      const response = await request(app).post("/cats").send(newCat);
-      expect(response.status).toBe(400);
+  it('POST /cats - should return 400 if required fields missing', async () => {
+    const response = await request(app).post('/cats').send({ name: 'NoDesc' });
+    expect(response.status).toBe(400);
+    expect(response.body.message).toContain('Required information omitted');
   });
 
-  it("PUT /cats/:id - should update a cat", async () => {
-    const updatedDescription = { description: "An updated description" };
-    const response = await request(app).put("/cats/1").send(updatedDescription);
+  it('DELETE /cats/:id - should delete a cat', async () => {
+    // First create a cat to delete
+    const createRes = await request(app).post('/cats').send({
+      name: 'ToDelete',
+      description: 'Temporary Cat',
+      location: 'Nowhere',
+    });
+    const idToDelete = createRes.body.id;
+
+    // Delete the cat
+    const deleteRes = await request(app).delete(`/cats/${idToDelete}`);
+    expect(deleteRes.status).toBe(200);
+    expect(deleteRes.body).toHaveProperty('message', 'Cat deleted');
+  });
+
+  it('PUT /cats/:id - should update cat description', async () => {
+    const newDescription = 'Updated Description';
+
+    const response = await request(app)
+      .put('/cats/1')
+      .send({ description: newDescription });
+
     expect(response.status).toBe(200);
-    expect(response.body.description).toBe(updatedDescription.description);
+    expect(response.body).toHaveProperty('id', 1);
+    expect(response.body).toHaveProperty('description', newDescription);
   });
 
-  it("PUT /cats/:id - should return 404 for a non-existent cat", async () => {
-      const updatedDescription = { description: "An updated description" };
-      const response = await request(app).put("/cats/999").send(updatedDescription);
-      expect(response.status).toBe(404);
-  });
-
-  it("DELETE /cats/:id - should delete a cat", async () => {
-    const response = await request(app).delete("/cats/1");
-    expect(response.status).toBe(200);
-    expect(response.body.message).toBe("Cat deleted");
-
-    const getResponse = await request(app).get("/cat/1");
-    expect(getResponse.status).toBe(404);
+  it('PUT /cats/:id - should return 404 if cat not found', async () => {
+    const response = await request(app)
+      .put('/cats/9999')
+      .send({ description: 'Does not exist' });
+    expect(response.status).toBe(404);
+    expect(response.body).toHaveProperty('error', 'Cat not found');
   });
 });

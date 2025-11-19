@@ -48,22 +48,23 @@ app.get("/cats", (req, res) => {
 });
 
 // get specific cat by id with description
-app.get("/cat/:id", (req, res) => {
+// fixed the cats/:id endpoint after realizing the bug through swagger.test.ts run and test fail
+app.get("/cats/:id", (req, res) => {
   const catId = parseInt(req.params.id);
   if (catId) {
     const cat = cats.find((c) => c.id === catId);
     if (cat) {
       res.status(200).json(cat);
     } else {
-    res.status(404).json({ error: "Cat not found" });
+    res.status(404).json({ error: "Cat not found" }); // moved this else statement here, after realizing the bug through server.test.ts run and test fail 
     }
-  }
+  } 
 });
 
 // add new cat
 app.post("/cats", (req, res) => {
   if (req.body.description && req.body.location && req.body.name) {
-    let highestID = 0;
+    let highestID = 0; // found the location mandatory fields bug through swagger.test.ts run and test fail
 
     for (let cat of cats) {
       if (cat.id > highestID) {
@@ -115,5 +116,6 @@ app.put("/cats/:id", (req, res) => {
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);
 });
+
 
 export default app;
