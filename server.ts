@@ -54,9 +54,9 @@ app.get("/cat/:id", (req, res) => {
     const cat = cats.find((c) => c.id === catId);
     if (cat) {
       res.status(200).json(cat);
-    }
-  } else {
+    } else {
     res.status(404).json({ error: "Cat not found" });
+    }
   }
 });
 
@@ -115,3 +115,5 @@ app.put("/cats/:id", (req, res) => {
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);
 });
+
+export default app;
